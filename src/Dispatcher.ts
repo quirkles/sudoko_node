@@ -17,7 +17,7 @@ interface Emitter<T extends EventMap> {
 export class GameEventDispatcher<T extends EventMap = EventMap>
   implements Emitter<T>
 {
-  private emitter = new EventEmitter();
+  private emitter = new EventEmitter().setMaxListeners(81);
 
   on<K extends EventKey<T>>(eventName: K, fn: EventReceiver<T[K]>) {
     this.emitter.on(eventName, fn);

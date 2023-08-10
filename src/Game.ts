@@ -29,16 +29,12 @@ export class Game {
     });
   }
 
-  solve(): Promise<void> {
+  solve() {
     this.cells
       .filter((c) => c.isSolved)
       .forEach((c) => {
         c.setValue(Number(c.valueString));
       });
-
-    return new Promise((res) => {
-      setTimeout(res, 100);
-    });
   }
 
   toString(): string {

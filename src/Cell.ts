@@ -63,6 +63,9 @@ export class Cell {
   setValue(value: number) {
     if (this.possibleValues.has(value)) {
       this.possibleValues = new Set([value]);
+      this.gameEventDispatcher.off("cellValueDetermined", () => {
+        this.handleOtherCellDetermined.bind(this);
+      });
       this.gameEventDispatcher.emit("cellValueDetermined", {
         cell: this,
         value,
