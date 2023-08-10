@@ -1,23 +1,57 @@
-import { Cell } from "./Cell";
+import { Cell, CellConstructorParams } from "./Cell";
+import { GameEventDispatcher } from "./Dispatcher";
 
 const gameStringRegex = /^[1-9?]{81}$/;
 export class Game {
+  private gameEventDispatcher = new GameEventDispatcher();
   private cells: Cell[] = [];
 
   constructor(gameString: string) {
-    if (!gameStringRegex.test(gameString)) {
+    const strippedGameString = gameString.replace(/[\t\s\n]+/gi, "").trim();
+    if (!gameStringRegex.test(strippedGameString)) {
       throw new Error(
-        `Game string: "${gameString}" is invalid, needs to be nine characters and contain only 1-9 or ? to indicate a missing number`,
+        `Game string: "${strippedGameString}" is invalid, needs to be nine characters and contain only 1-9 or ? to indicate a missing number`,
       );
     }
-    gameString.split("").map((char, index) => {
+    strippedGameString.split("").map((char, index) => {
       const i = index % 9;
-      const j = Math.ceil(i / 81);
+      const j = Math.floor(index / 9);
 
-      console.log(i, j);
+      const cellParams: CellConstructorParams = {
+        coordinates: [i, j],
+      };
+
+      if (char !== "?") {
+        cellParams.knownValue = Number(char);
+      }
+
+      this.cells.push(new Cell(cellParams, this.gameEventDispatcher));
     });
   }
-  print() {
-    console.log(this.cells);
+
+  solve(): Promise<void> {
+    this.cells
+      .filter((c) => c.isSolved)
+      .forEach((c) => {
+        c.setValue(Number(c.valueString));
+      });
+
+    return new Promise((res) => {
+      setTimeout(res, 100);
+    });
+  }
+
+  toString(): string {
+    return this.cells.reduce((str, cell, index) => {
+      str += ` ${cell.valueString.length === 1 ? cell.valueString : "?"} `;
+      if ((index + 1) % 27 === 0) {
+        str += "\n---------   ---------   ---------\n";
+      } else if ((index + 1) % 9 === 0) {
+        str += "\n";
+      } else if ((index + 1) % 3 === 0) {
+        str += " | ";
+      }
+      return str;
+    }, "");
   }
 }
