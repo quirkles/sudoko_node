@@ -1,87 +1,91 @@
-import { GameEventDispatcher } from "./Dispatcher";
-
 export interface CellConstructorParams {
   coordinates: [number, number];
   knownValue?: number;
 }
 
 export class Cell {
-  static areCellsRelated(cell_1: Cell, cell_2: Cell) {
+  isRelatedToOtherCell(cell: Cell) {
     return (
-      cell_1.i === cell_2.i ||
-      cell_1.j === cell_2.j ||
-      cell_1.box === cell_2.box
+      this._i === cell._i || this._j === cell._j || this._box === cell._box
     );
   }
-  private i: number;
-  private j: number;
-  private box: number; // 0 -> 8
-  private possibleValues = new Set<number>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  private gameEventDispatcher: GameEventDispatcher;
 
-  constructor(
-    cellParams: CellConstructorParams,
-    gameEventDispatcher: GameEventDispatcher,
-  ) {
-    [this.i, this.j] = cellParams.coordinates;
+  private _i: number;
+  private _j: number;
+  private _box: number; // 0 -> 8
+  private _possibleValues = new Set<number>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  private _knownValue: number | null = null;
+  private _isSolved = false;
+
+  constructor(cellParams: CellConstructorParams) {
+    [this._i, this._j] = cellParams.coordinates;
+    this._box = this.getBox();
     if (cellParams.knownValue) {
-      this.possibleValues = new Set([cellParams.knownValue]);
+      this._possibleValues = new Set([cellParams.knownValue]);
+      this._knownValue = cellParams.knownValue;
+      this._isSolved = true;
     }
-    this.gameEventDispatcher = gameEventDispatcher;
-    this.gameEventDispatcher.on(
-      "cellValueDetermined",
-      this.handleOtherCellDetermined.bind(this),
-    );
-    this.box = this.getBox();
   }
 
   getBox(): number {
-    const small_i = Math.floor(this.i / 3);
-    const small_j = Math.floor(this.j / 3);
+    const small_i = Math.floor(this._i / 3);
+    const small_j = Math.floor(this._j / 3);
     return small_j * 3 + small_i;
   }
 
-  private handleOtherCellDetermined(payload: { cell: Cell; value: number }) {
-    if (this.isSolved || !Cell.areCellsRelated(this, payload.cell)) {
-      return;
-    }
-    this.possibleValues.delete(payload.value);
-    if (this.possibleValues.size === 1) {
-      this.gameEventDispatcher.off("cellValueDetermined", () => {
-        this.handleOtherCellDetermined.bind(this);
-      });
-      this.gameEventDispatcher.emit("cellValueDetermined", {
-        cell: this,
-        value: Array.from(this.possibleValues)[0],
-      });
-    }
-    if (this.possibleValues.size === 0) {
-      throw new Error(`No possible values for cell {${this.i},${this.j}`);
+  ruleOutValue(value: number) {
+    this.ruleOutValues([value]);
+  }
+
+  ruleOutValues(values: number[]) {
+    values.forEach((v) => {
+      this._possibleValues.delete(v);
+    });
+    if (this._possibleValues.size === 1) {
+      this._knownValue = Number(this._possibleValues.values().next().value);
+      this._isSolved = true;
     }
   }
 
   setValue(value: number) {
-    if (this.possibleValues.has(value)) {
-      this.possibleValues = new Set([value]);
-      this.gameEventDispatcher.off("cellValueDetermined", () => {
-        this.handleOtherCellDetermined.bind(this);
-      });
-      this.gameEventDispatcher.emit("cellValueDetermined", {
-        cell: this,
-        value,
-      });
-    } else {
-      throw new Error(
-        `Cell: {${this.i},${this.j} set to value: ${value} not in possible values`,
-      );
-    }
+    this._possibleValues = new Set([value]);
+    this._isSolved = true;
+    this._knownValue = value;
   }
 
-  get valueString(): string {
-    return Array.from(this.possibleValues).sort().join("");
+  isInRow(row: number): boolean {
+    return this._i === row;
+  }
+
+  isInColumn(col: number): boolean {
+    return this._j === col;
+  }
+
+  isInBox(box: number): boolean {
+    return this._box === box;
+  }
+
+  get knownValue(): number | null {
+    return this._knownValue;
   }
 
   get isSolved(): boolean {
-    return this.possibleValues.size === 1;
+    return this._isSolved;
+  }
+
+  get valueString(): string {
+    return this.possibleValues.sort().join("");
+  }
+
+  get possibleValues(): number[] {
+    return Array.from(this._possibleValues);
+  }
+
+  get locators(): { i: number; j: number; box: number } {
+    return {
+      i: this._i,
+      j: this._j,
+      box: this._box,
+    };
   }
 }
