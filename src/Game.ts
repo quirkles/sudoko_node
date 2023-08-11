@@ -1,10 +1,8 @@
 import { Cell, CellConstructorParams } from "./Cell";
-import { GameEventDispatcher } from "./Dispatcher";
 
 const gameStringRegex = /^[1-9?]{81}$/;
 
 export class Game {
-  private gameEventDispatcher = new GameEventDispatcher();
   private cells: Set<Cell>;
   private unsolvedCells: Set<Cell>;
 
