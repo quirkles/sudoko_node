@@ -1,6 +1,6 @@
 export interface CellConstructorParams {
   coordinates: [number, number];
-  knownValue?: number;
+  possibleValues: number[];
 }
 
 export class Cell {
@@ -13,16 +13,16 @@ export class Cell {
   private _i: number;
   private _j: number;
   private _box: number; // 0 -> 8
-  private _possibleValues = new Set<number>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  private _possibleValues: Set<number>;
   private _knownValue: number | null = null;
   private _isSolved = false;
 
   constructor(cellParams: CellConstructorParams) {
     [this._i, this._j] = cellParams.coordinates;
     this._box = this.getBox();
-    if (cellParams.knownValue) {
-      this._possibleValues = new Set([cellParams.knownValue]);
-      this._knownValue = cellParams.knownValue;
+    this._possibleValues = new Set(cellParams.possibleValues);
+    if (this._possibleValues.size === 1) {
+      this._knownValue = Number(this._possibleValues.values().next().value);
       this._isSolved = true;
     }
   }
@@ -38,6 +38,9 @@ export class Cell {
   }
 
   ruleOutValues(values: number[]) {
+    // if (this.isSolved) {
+    //   return;
+    // }
     values.forEach((v) => {
       this._possibleValues.delete(v);
     });
@@ -45,12 +48,21 @@ export class Cell {
       this._knownValue = Number(this._possibleValues.values().next().value);
       this._isSolved = true;
     }
+    if (this._possibleValues.size === 0) {
+      throw new Error(
+        `Ruled out all possible values for cell: {${this._i},${this._j}}`,
+      );
+    }
   }
 
   setValue(value: number) {
-    this._possibleValues = new Set([value]);
-    this._isSolved = true;
-    this._knownValue = value;
+    if (this._possibleValues.has(value)) {
+      this._possibleValues = new Set([value]);
+      this._isSolved = true;
+      this._knownValue = value;
+    } else {
+      throw new Error("Set cell to impossible value");
+    }
   }
 
   isInRow(row: number): boolean {
