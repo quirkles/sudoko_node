@@ -1,10 +1,24 @@
 import { Game } from "./Game";
 
-export async function main(gameString: string): Promise<void> {
-  const game = new Game(gameString);
-  console.log("Game initialized.");
-  console.log(game.toString());
-  game.solve();
-  console.log("Game solved.");
-  console.log(game.toString());
-}
+const game = new Game(`
+4  ?  ?   ?  1  ?   5  ?  ?
+?  9  ?   ?  ?  ?   2  ?  ?
+?  ?  3   5  ?  4   ?  6  ?
+
+3  ?  ?   ?  ?  ?   ?  ?  4
+?  ?  ?   ?  ?  8   ?  ?  ?
+?  ?  4   7  ?  6   ?  5  ?
+
+
+?  ?  7   ?  8  ?   ?  ?  ?
+2  ?  ?   1  ?  7   6  ?  ?
+?  ?  ?   ?  3  ?   ?  1  ?
+`);
+
+const start = Date.now();
+console.log("Begin:");
+console.log(game.toString());
+game.solve();
+const intervalMs = (Date.now() - start)
+console.log(`Solved in ${intervalMs}ms:`);
+console.log(game.toString());
